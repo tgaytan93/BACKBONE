@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import AdminNav from '@/app/admin/admin-nav';
 import StatusButtons from './status-buttons';
 import NotesEditor from './notes-editor';
+import MessageThread from './message-thread';
+import ReplyComposer from './reply-composer';
 import { type Status } from '@/app/admin/status-pill';
 
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
@@ -44,8 +46,17 @@ export default async function SubmissionDetailPage({
     notFound();
   }
 
+  const { data: messageRows } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('submission_id', id)
+    .order('sent_at', { ascending: true });
+
+  const messages = messageRows ?? [];
+
   const specs: Array<[string, string]> = [
     ['NAME', submission.name],
+    ['EMAIL', submission.email || '—'],
     ['BUSINESS', submission.business || '—'],
     ['TIER', submission.tier || '—'],
     ['BUDGET', submission.budget || '—'],
@@ -101,6 +112,19 @@ export default async function SubmissionDetailPage({
           <StatusButtons
             id={submission.id}
             initialStatus={(submission.status ?? 'new') as Status}
+          />
+        </div>
+
+        <div className="mb-10">
+          <div className="text-xs tracking-[0.25em] text-white/40 mb-4 font-mono">THREAD</div>
+          <MessageThread messages={messages} />
+        </div>
+
+        <div className="mb-10">
+          <div className="text-xs tracking-[0.25em] text-white/40 mb-4 font-mono">REPLY</div>
+          <ReplyComposer
+            submissionId={submission.id}
+            recipientEmail={submission.email ?? null}
           />
         </div>
 

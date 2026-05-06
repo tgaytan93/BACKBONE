@@ -14,6 +14,7 @@ export default function BackboneLanding() {
   const [loopKey, setLoopKey] = useState(0);
 
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [business, setBusiness] = useState('');
   const [whatsBroken, setWhatsBroken] = useState('');
   const [tier, setTier] = useState('');
@@ -25,8 +26,8 @@ export default function BackboneLanding() {
     e.preventDefault();
     if (submitState === 'submitting') return;
 
-    if (!name.trim() || !whatsBroken.trim()) {
-      setErrorMsg('Name and what is not working are required.');
+    if (!name.trim() || !email.trim() || !whatsBroken.trim()) {
+      setErrorMsg('Name, email, and what is not working are required.');
       setSubmitState('error');
       return;
     }
@@ -40,6 +41,7 @@ export default function BackboneLanding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name,
+          email,
           business,
           whats_broken: whatsBroken,
           tier,
@@ -452,6 +454,19 @@ export default function BackboneLanding() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Jane Operator"
+                  required
+                  disabled={submitState === 'submitting'}
+                  className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">EMAIL</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jane@acmehvac.com"
+                  required
                   disabled={submitState === 'submitting'}
                   className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
                 />
