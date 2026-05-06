@@ -6,10 +6,58 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
 type TerminalLine = { text: string; delay: number; accent?: boolean };
 
+type SubmitState = 'idle' | 'submitting' | 'success' | 'error';
+
 export default function BackboneLanding() {
   const [uptime, setUptime] = useState(99.99);
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
   const [loopKey, setLoopKey] = useState(0);
+
+  const [name, setName] = useState('');
+  const [business, setBusiness] = useState('');
+  const [whatsBroken, setWhatsBroken] = useState('');
+  const [tier, setTier] = useState('');
+  const [budget, setBudget] = useState('');
+  const [submitState, setSubmitState] = useState<SubmitState>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (submitState === 'submitting') return;
+
+    if (!name.trim() || !whatsBroken.trim()) {
+      setErrorMsg('Name and what is not working are required.');
+      setSubmitState('error');
+      return;
+    }
+
+    setSubmitState('submitting');
+    setErrorMsg('');
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          business,
+          whats_broken: whatsBroken,
+          tier,
+          budget,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Request failed.');
+      }
+
+      setSubmitState('success');
+    } catch {
+      setErrorMsg('Something went wrong. Try again or email tgaytan@backbonemade.com.');
+      setSubmitState('error');
+    }
+  }
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -390,27 +438,84 @@ export default function BackboneLanding() {
           <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight">Tell me what&apos;s broken.</h2>
           <p className="text-white/70 text-base mb-10">Every inquiry gets a real reply within 48 hours. No bots, no auto-responders.</p>
 
-          <div className="space-y-5">
-            {[
-              { label: 'YOUR NAME', placeholder: 'Jane Operator' },
-              { label: 'BUSINESS + WHAT YOU DO', placeholder: 'Acme HVAC — residential service in Phoenix' },
-              { label: "WHAT'S NOT WORKING", placeholder: "Wix site is slow, can't take payments, manually scheduling jobs...", textarea: true },
-              { label: 'TIER', placeholder: 'Foundation / Operator / Autopilot / Not sure' },
-              { label: 'BUDGET', placeholder: '$10k / $25k / $50k+ / Open' },
-            ].map((field) => (
-              <div key={field.label}>
-                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">{field.label}</label>
-                {field.textarea ? (
-                  <textarea rows={3} placeholder={field.placeholder} className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30" />
-                ) : (
-                  <input type="text" placeholder={field.placeholder} className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30" />
-                )}
+          {submitState === 'success' ? (
+            <div className="border border-cyan-400/40 bg-cyan-400/5 p-6">
+              <div className="text-xs tracking-[0.25em] text-cyan-400 mb-3 font-mono">✓ RECEIVED</div>
+              <p className="text-cyan-400 text-lg font-bold">Got it. I&apos;ll reply within 48 hours.</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">YOUR NAME</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Jane Operator"
+                  disabled={submitState === 'submitting'}
+                  className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+                />
               </div>
-            ))}
-            <button onClick={() => alert('Demo only — real form will send to Tyler.')} className="bg-cyan-400 text-black px-6 py-3 text-sm font-bold tracking-widest inline-flex items-center gap-2 hover:bg-white transition mt-2">
-              SEND →
-            </button>
-          </div>
+              <div>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">BUSINESS + WHAT YOU DO</label>
+                <input
+                  type="text"
+                  value={business}
+                  onChange={(e) => setBusiness(e.target.value)}
+                  placeholder="Acme HVAC — residential service in Phoenix"
+                  disabled={submitState === 'submitting'}
+                  className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">WHAT&apos;S NOT WORKING</label>
+                <textarea
+                  rows={3}
+                  value={whatsBroken}
+                  onChange={(e) => setWhatsBroken(e.target.value)}
+                  placeholder="Wix site is slow, can't take payments, manually scheduling jobs..."
+                  disabled={submitState === 'submitting'}
+                  className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">TIER</label>
+                <input
+                  type="text"
+                  value={tier}
+                  onChange={(e) => setTier(e.target.value)}
+                  placeholder="Foundation / Operator / Autopilot / Not sure"
+                  disabled={submitState === 'submitting'}
+                  className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+                />
+              </div>
+              <div>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">BUDGET</label>
+                <input
+                  type="text"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                  placeholder="$10k / $25k / $50k+ / Open"
+                  disabled={submitState === 'submitting'}
+                  className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+                />
+              </div>
+
+              {submitState === 'error' && errorMsg && (
+                <div className="border border-red-500/40 bg-red-500/5 px-3 py-2 text-sm text-red-400 font-mono">
+                  {errorMsg}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitState === 'submitting'}
+                className="bg-cyan-400 text-black px-6 py-3 text-sm font-bold tracking-widest inline-flex items-center gap-2 hover:bg-white transition mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {submitState === 'submitting' ? 'SENDING...' : 'SEND →'}
+              </button>
+            </form>
+          )}
         </div>
       </section>
 
