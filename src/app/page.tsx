@@ -1,102 +1,418 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import { ArrowRight, ArrowUpRight } from 'lucide-react';
+
+type TerminalLine = { text: string; delay: number; accent?: boolean };
+
+export default function BackboneLanding() {
+  const [contrastValue, setContrastValue] = useState(50);
+  const [uptime, setUptime] = useState(99.99);
+  const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
+  const [loopKey, setLoopKey] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setUptime((u) => {
+        const next = u + (Math.random() - 0.5) * 0.001;
+        return Math.max(99.95, Math.min(99.999, next));
+      });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const sequence: TerminalLine[] = [
+      { text: '> backbone init --client', delay: 400 },
+      { text: '  ✓ scoping requirements', delay: 700 },
+      { text: '  ✓ architecting system', delay: 700 },
+      { text: '  ✓ multi-tenant ready', delay: 700 },
+      { text: '> deploy --production', delay: 600 },
+      { text: '  ✓ frontend live', delay: 500 },
+      { text: '  ✓ admin panel live', delay: 500 },
+      { text: '  ✓ devops handoff complete', delay: 500 },
+      { text: '> system online', delay: 600, accent: true },
+    ];
+
+    let cancelled = false;
+    let acc = 0;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+
+    sequence.forEach((line) => {
+      acc += line.delay;
+      const t = setTimeout(() => {
+        if (!cancelled) setTerminalLines((prev) => [...prev, line]);
+      }, acc);
+      timeouts.push(t);
+    });
+
+    const loop = setTimeout(() => {
+      if (!cancelled) {
+        setTerminalLines([]);
+        setLoopKey((k) => k + 1);
+      }
+    }, acc + 4000);
+    timeouts.push(loop);
+
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [loopKey]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="bg-black text-white min-h-screen">
+      <nav className="border-b border-white/10 px-6 md:px-12 py-4 flex justify-between items-center sticky top-0 bg-black/90 backdrop-blur z-50">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 bg-white text-black flex items-center justify-center font-black text-base rounded-sm">B</div>
+          <span className="font-black tracking-[0.2em] text-sm">BACKBONE</span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+        <div className="hidden md:flex gap-8 text-xs tracking-widest">
+          <a href="#work" className="hover:text-cyan-400 transition">WORK</a>
+          <a href="#tiers" className="hover:text-cyan-400 transition">TIERS</a>
+          <a href="#process" className="hover:text-cyan-400 transition">PROCESS</a>
+          <a href="#contact" className="hover:text-cyan-400 transition">CONTACT</a>
+        </div>
+        <a href="#contact" className="bg-cyan-400 text-black px-3 py-1.5 text-xs font-bold tracking-wider hover:bg-white transition">START →</a>
+      </nav>
+
+      <section className="px-6 md:px-12 pt-16 md:pt-24 pb-16 max-w-7xl mx-auto">
+        <div className="mb-6 font-mono text-[11px]">
+          <span className="text-cyan-400 animate-pulse">●</span>
+          <span className="text-white/60 ml-2 tracking-widest">SYS_STATUS: ONLINE — ACCEPTING NEW CLIENTS</span>
+        </div>
+
+        <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+          <div className="lg:col-span-7">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[0.95] mb-6">
+              Systems that<br />work for you,<br />
+              <span className="relative inline-block">
+                not against you.
+                <span className="absolute -bottom-1 left-0 w-32 h-1 bg-cyan-400" />
+              </span>
+            </h1>
+            <p className="text-base md:text-lg text-white/70 max-w-xl mb-8 leading-relaxed">
+              Custom software for businesses tired of fighting their tools. Built right the first time. Built to last.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <a href="#contact" className="bg-white text-black px-6 py-3 text-sm font-bold tracking-wider inline-flex items-center justify-center gap-2 hover:bg-cyan-400 transition group">
+                START A PROJECT
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+              </a>
+              <a href="#work" className="border border-white/20 text-white px-6 py-3 text-sm font-bold tracking-wider inline-flex items-center justify-center gap-2 hover:border-cyan-400 hover:text-cyan-400 transition">
+                SEE THE WORK
+              </a>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5">
+            <div className="border border-white/10 bg-zinc-950 overflow-hidden">
+              <div className="border-b border-white/10 px-4 py-2 flex items-center gap-2 bg-zinc-900">
+                <div className="flex gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500/60" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/60" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500/60" />
+                </div>
+                <div className="ml-2 text-[10px] text-white/40 tracking-widest font-mono">~/backbone-studio</div>
+              </div>
+              <div className="p-5 h-72 overflow-hidden font-mono text-[12px]">
+                {terminalLines.map((line, i) => (
+                  <div key={i} className={line.accent ? 'text-cyan-400 font-bold' : 'text-white/80'} style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                    {line.text}
+                  </div>
+                ))}
+                <span className="inline-block w-2 h-3 bg-cyan-400 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 border border-white/10">
+          {[
+            { label: 'UPTIME', value: `${uptime.toFixed(3)}%` },
+            { label: 'CLIENTS', value: '01' },
+            { label: 'SHIPPED', value: '03' },
+            { label: 'AVG BUILD', value: '6 WKS' },
+          ].map((stat) => (
+            <div key={stat.label} className="bg-black px-5 py-4">
+              <div className="text-[10px] text-white/40 mb-1.5 tracking-widest font-mono">{stat.label}</div>
+              <div className="text-xl md:text-2xl font-bold tabular-nums">{stat.value}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 px-6 md:px-12 py-20 bg-zinc-950">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-12 gap-8 mb-10">
+            <div className="md:col-span-5">
+              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">01 — THE PROBLEM</div>
+              <h2 className="text-3xl md:text-4xl font-black leading-tight">Most small business software is broken on purpose.</h2>
+            </div>
+            <div className="md:col-span-7 md:pt-12">
+              <p className="text-white/70 text-base leading-relaxed">
+                Templates that almost fit. Plugins that break during your busy season. Five tools that don&apos;t talk. You spend Sunday night fixing what should just work.
+              </p>
+            </div>
+          </div>
+
+          <div className="border border-white/10 bg-black p-6 md:p-8">
+            <div className="flex justify-between mb-4 text-[10px] tracking-widest font-mono">
+              <span className={contrastValue < 50 ? 'text-cyan-400' : 'text-white/40'}>← TEMPLATE</span>
+              <span className={contrastValue >= 50 ? 'text-cyan-400' : 'text-white/40'}>CUSTOM →</span>
+            </div>
+            <input type="range" min="0" max="100" value={contrastValue} onChange={(e) => setContrastValue(parseInt(e.target.value))} className="w-full mb-8 accent-cyan-400" />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="border border-red-500/20 p-5 transition-all" style={{ opacity: contrastValue < 50 ? 1 : 0.25 }}>
+                <div className="text-[10px] text-red-400 tracking-widest mb-3 font-mono">✕ TEMPLATE STACK</div>
+                <ul className="space-y-2 text-white/70 text-sm">
+                  <li className="flex gap-2"><span className="text-red-400">✕</span>Manual customer entry into spreadsheets</li>
+                  <li className="flex gap-2"><span className="text-red-400">✕</span>Plugins break during busy season</li>
+                  <li className="flex gap-2"><span className="text-red-400">✕</span>Call dev to change a phone number</li>
+                  <li className="flex gap-2"><span className="text-red-400">✕</span>Five tools, none integrated</li>
+                  <li className="flex gap-2"><span className="text-red-400">✕</span>8+ hours/week of admin</li>
+                </ul>
+              </div>
+              <div className="border border-cyan-400/30 p-5 transition-all" style={{ opacity: contrastValue >= 50 ? 1 : 0.25 }}>
+                <div className="text-[10px] text-cyan-400 tracking-widest mb-3 font-mono">✓ BACKBONE SYSTEM</div>
+                <ul className="space-y-2 text-white/70 text-sm">
+                  <li className="flex gap-2"><span className="text-cyan-400">✓</span>Auto-captured into your database</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">✓</span>Built on infra that doesn&apos;t fail</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">✓</span>Edit anything in your admin panel</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">✓</span>One system, fully connected</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">✓</span>Hours back. Every week.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="work" className="border-t border-white/10 px-6 md:px-12 py-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-12 gap-8 mb-10">
+            <div className="md:col-span-5">
+              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">02 — PROOF</div>
+              <h2 className="text-3xl md:text-4xl font-black leading-tight">Real systems.<br />Real operators.</h2>
+            </div>
+            <div className="md:col-span-7 md:pt-12">
+              <p className="text-white/70 text-base leading-relaxed">Every project shipped is a working system in production — not a portfolio piece.</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-px bg-white/10">
+            {[
+              { tag: 'ESPORTS · SAAS', title: 'Serenyx', blurb: 'Fully automated league management. Player PWA, staff app, admin tooling.', specs: [['SCALE', '100+ teams · 3K members'], ['BUILD', '~1 month, solo'], ['STACK', 'Multi-tenant SaaS']] },
+              { tag: 'AUTOMOTIVE · TOOL', title: 'OffsetLabs', blurb: 'Heavy-math wheel fitment calculator. NHTSA + wheelsize.com integrations.', specs: [['DOMAIN', 'JDM / stance / fitment'], ['APIS', '2 third-party'], ['MODEL', 'Niche + affiliate']] },
+              { tag: 'HVAC · COMING SOON', title: 'Conway Comfort', blurb: 'Custom field service system. Job tracking, customer DB, invoicing, scheduling.', specs: [['VERTICAL', 'Trades / field service'], ['STATUS', 'In progress'], ['ARCH', 'Multi-tenant day one']] },
+            ].map((c) => (
+              <div key={c.title} className="bg-black p-6 hover:bg-zinc-950 transition group cursor-pointer">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="text-[10px] tracking-widest text-cyan-400 font-mono">{c.tag}</div>
+                  <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-cyan-400 group-hover:scale-110 transition" />
+                </div>
+                <div className="mb-5 h-32 border border-white/10 bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(0,229,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
+                  <div className="text-3xl font-black tracking-tight relative z-10 group-hover:text-cyan-400 transition">{c.title}</div>
+                </div>
+                <h3 className="text-xl font-black mb-3">{c.title}</h3>
+                <p className="text-white/60 text-sm leading-relaxed mb-5">{c.blurb}</p>
+                <div className="space-y-2 pt-4 border-t border-white/10">
+                  {c.specs.map(([label, value]) => (
+                    <div key={label} className="flex justify-between text-[11px] font-mono">
+                      <span className="text-white/40 tracking-widest">{label}</span>
+                      <span className="text-white/80 text-right">{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="tiers" className="border-t border-white/10 px-6 md:px-12 py-20 bg-zinc-950">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-12 gap-8 mb-10">
+            <div className="md:col-span-5">
+              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">03 — OFFERINGS</div>
+              <h2 className="text-3xl md:text-4xl font-black leading-tight">Three ways to work together.</h2>
+            </div>
+            <div className="md:col-span-7 md:pt-12">
+              <p className="text-white/70 text-base leading-relaxed">Each tier is a complete system, not a stripped-down version of the next.</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-px bg-white/10">
+            {[
+              { num: '01', name: 'Foundation', price: '$8k–$12k', time: '3–4 wks', tagline: 'Looks like your business actually cares.', specs: ['Custom design (no templates)', 'Mobile + SEO ready', 'Lead capture + customer DB', 'Real hosting setup'] },
+              { num: '02', name: 'Operator', price: '$20k–$30k', time: '6–10 wks', tagline: 'You stop being your own software.', featured: true, specs: ['Everything in Foundation', 'Customer portal + booking', 'Stripe payments + invoicing', 'Recurring billing', 'Full admin panel'] },
+              { num: '03', name: 'Autopilot', price: '$40k–$55k', time: '3–5 mo', tagline: 'The system runs itself.', specs: ['Everything in Operator', 'Automated reminders (email/SMS)', 'Contract renewals + drip', 'Inventory + estimates', 'Reporting dashboard', 'DevOps panel — full control'] },
+            ].map((tier) => (
+              <div key={tier.num} className={`bg-black p-6 hover:bg-zinc-900 transition group relative ${tier.featured ? 'border-t-2 border-t-cyan-400' : ''}`}>
+                {tier.featured && <div className="absolute top-0 right-0 bg-cyan-400 text-black text-[10px] px-2 py-1 font-bold tracking-widest">MOST COMMON</div>}
+                <div className="flex justify-between items-baseline mb-4">
+                  <div className="text-[10px] tracking-widest text-white/40 font-mono">TIER {tier.num}</div>
+                  <div className="text-[10px] text-white/40 font-mono">{tier.time}</div>
+                </div>
+                <div className="text-2xl font-black mb-2">{tier.name}</div>
+                <div className="text-xl font-bold mb-5 pb-5 border-b border-white/10 tabular-nums">{tier.price}</div>
+                <ul className="space-y-2 mb-5 text-sm text-white/70">
+                  {tier.specs.map((s) => (
+                    <li key={s} className="flex gap-2"><span className="text-cyan-400">▸</span><span>{s}</span></li>
+                  ))}
+                </ul>
+                <p className="text-cyan-400 text-sm font-semibold italic pt-4 border-t border-white/10">&ldquo;{tier.tagline}&rdquo;</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 text-[11px] text-white/50 text-center tracking-widest font-mono">
+            + SEO FOUNDATION ADD-ON · $1K–$2K · BUILT INTO LAUNCH
+          </div>
+        </div>
+      </section>
+
+      <section id="process" className="border-t border-white/10 px-6 md:px-12 py-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-12 gap-8 mb-10">
+            <div className="md:col-span-5">
+              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">04 — PROCESS</div>
+              <h2 className="text-3xl md:text-4xl font-black leading-tight">Four steps.<br />No mystery.</h2>
+            </div>
+            <div className="md:col-span-7 md:pt-12">
+              <p className="text-white/70 text-base leading-relaxed">Transparent from first call to handoff. You know what&apos;s happening at every stage.</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-px bg-white/10">
+            {[
+              { num: '01', title: 'Discovery', desc: "Talk through what's broken and whether we're a fit. Free, no pressure." },
+              { num: '02', title: 'Scope', desc: 'Written proposal: deliverables, timeline, fixed price. No surprises.' },
+              { num: '03', title: 'Build', desc: 'You see progress as it happens. Not a black box at the end.' },
+              { num: '04', title: 'Handoff', desc: 'Real onboarding. DevOps panel. You own and operate the system.' },
+            ].map((step) => (
+              <div key={step.num} className="bg-black p-5">
+                <div className="flex items-baseline gap-3 mb-3">
+                  <div className="text-cyan-400 text-sm font-bold font-mono">{step.num}</div>
+                  <h3 className="text-lg font-black">{step.title}</h3>
+                </div>
+                <p className="text-white/60 text-sm leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 px-6 md:px-12 py-20 bg-zinc-950">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-12 gap-8 mb-10">
+            <div className="md:col-span-5">
+              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">05 — FIT CHECK</div>
+              <h2 className="text-3xl md:text-4xl font-black leading-tight">Built for operators.<br />Not for everyone.</h2>
+            </div>
+            <div className="md:col-span-7 md:pt-12">
+              <p className="text-white/70 text-base leading-relaxed">Backbone is premium-only. Standards don&apos;t drop. They go up over time.</p>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="border border-cyan-400/30 p-6 bg-black">
+              <div className="text-[10px] tracking-widest text-cyan-400 mb-4 font-mono">✓ FOR YOU IF</div>
+              <ul className="space-y-3 text-white/80 text-sm">
+                <li className="flex gap-2"><span className="text-cyan-400 mt-0.5">✓</span>You run a real business and need software that runs with you</li>
+                <li className="flex gap-2"><span className="text-cyan-400 mt-0.5">✓</span>You&apos;re tired of fighting Wix, plugins, or a developer who ghosted</li>
+                <li className="flex gap-2"><span className="text-cyan-400 mt-0.5">✓</span>You want to own your system, not rent it</li>
+              </ul>
+            </div>
+            <div className="border border-white/10 p-6 bg-black">
+              <div className="text-[10px] tracking-widest text-white/40 mb-4 font-mono">✕ NOT FOR YOU IF</div>
+              <ul className="space-y-3 text-white/50 text-sm">
+                <li className="flex gap-2"><span className="text-white/30 mt-0.5">✕</span>You&apos;re looking for the cheapest option</li>
+                <li className="flex gap-2"><span className="text-white/30 mt-0.5">✕</span>You want a 5-page brochure site</li>
+                <li className="flex gap-2"><span className="text-white/30 mt-0.5">✕</span>You want me to keep the keys after handoff</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 px-6 md:px-12 py-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-12 gap-8 mb-10">
+            <div className="md:col-span-5">
+              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">06 — ABOUT</div>
+              <h2 className="text-3xl md:text-4xl font-black leading-tight">One person. Every line.</h2>
+            </div>
+            <div className="md:col-span-7 md:pt-12">
+              <p className="text-white/70 text-base leading-relaxed">
+                Backbone is a one-person studio run by Tyler [Lastname] — a tradesman who codes. Every line of code, every design decision, every client call: same person. No handoffs. No juniors. No agency markup. Just systems built right, by the person who&apos;s actually building them.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 border border-white/10">
+            {[
+              { label: 'ROLE', value: 'FOUNDER + BUILDER' },
+              { label: 'BASED', value: 'INDIANAPOLIS, IN' },
+              { label: 'BACKGROUND', value: 'HVAC + CODE' },
+              { label: 'AVAILABILITY', value: '1 CLIENT/MO' },
+            ].map((stat) => (
+              <div key={stat.label} className="bg-black px-5 py-4">
+                <div className="text-[10px] text-white/40 mb-1.5 tracking-widest font-mono">{stat.label}</div>
+                <div className="text-xl md:text-2xl font-bold tabular-nums">{stat.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="contact" className="border-t border-white/10 px-6 md:px-12 py-20">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">07 — START</div>
+          <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight">Tell me what&apos;s broken.</h2>
+          <p className="text-white/70 text-base mb-10">Every inquiry gets a real reply within 48 hours. No bots, no auto-responders.</p>
+
+          <div className="space-y-5">
+            {[
+              { label: 'YOUR NAME', placeholder: 'Jane Operator' },
+              { label: 'BUSINESS + WHAT YOU DO', placeholder: 'Acme HVAC — residential service in Phoenix' },
+              { label: "WHAT'S NOT WORKING", placeholder: "Wix site is slow, can't take payments, manually scheduling jobs...", textarea: true },
+              { label: 'TIER', placeholder: 'Foundation / Operator / Autopilot / Not sure' },
+              { label: 'BUDGET', placeholder: '$10k / $25k / $50k+ / Open' },
+            ].map((field) => (
+              <div key={field.label}>
+                <label className="text-[10px] tracking-widest text-white/50 block mb-2 font-mono">{field.label}</label>
+                {field.textarea ? (
+                  <textarea rows={3} placeholder={field.placeholder} className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30" />
+                ) : (
+                  <input type="text" placeholder={field.placeholder} className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30" />
+                )}
+              </div>
+            ))}
+            <button onClick={() => alert('Demo only — real form will send to Tyler.')} className="bg-cyan-400 text-black px-6 py-3 text-sm font-bold tracking-widest inline-flex items-center gap-2 hover:bg-white transition mt-2">
+              SEND →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-white/10 px-6 md:px-12 py-10">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white text-black flex items-center justify-center font-black text-lg rounded-sm">B</div>
+              <div>
+                <div className="font-black tracking-[0.2em] text-sm">BACKBONE</div>
+                <div className="text-[10px] text-white/40 mt-0.5">custom systems for forward-thinking businesses</div>
+              </div>
+            </div>
+            <div className="text-[10px] text-white/40 tracking-widest font-mono">
+              <div>USEBACKBONE.COM</div>
+              <div className="mt-0.5">© 2026 — BUILT ON PURPOSE. ENGINEERED TO LAST.</div>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
