@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 
 type TerminalLine = { text: string; delay: number; accent?: boolean };
@@ -63,8 +64,14 @@ export default function BackboneLanding() {
     <div className="bg-black text-white min-h-screen">
       <nav className="border-b border-white/10 px-6 md:px-12 py-4 flex justify-between items-center sticky top-0 bg-black/90 backdrop-blur z-50">
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-white text-black flex items-center justify-center font-black text-base rounded-sm">B</div>
-          <span className="font-black tracking-[0.2em] text-sm">BACKBONE</span>
+          <Image
+            src="/backbone-lockup-white.png"
+            alt="Backbone"
+            width={140}
+            height={28}
+            priority
+            className="h-7 w-auto"
+          />
         </div>
         <div className="hidden md:flex gap-8 text-xs tracking-widest">
           <a href="#work" className="hover:text-cyan-400 transition">WORK</a>
@@ -196,31 +203,47 @@ export default function BackboneLanding() {
 
           <div className="grid md:grid-cols-3 gap-px bg-white/10">
             {[
-              { tag: 'ESPORTS · SAAS', title: 'Serenyx', blurb: 'Fully automated league management. Player PWA, staff app, admin tooling.', specs: [['SCALE', '100+ teams · 3K members'], ['BUILD', '~1 month, solo'], ['STACK', 'Multi-tenant SaaS']] },
-              { tag: 'AUTOMOTIVE · TOOL', title: 'OffsetLabs', blurb: 'Heavy-math wheel fitment calculator. NHTSA + wheelsize.com integrations.', specs: [['DOMAIN', 'JDM / stance / fitment'], ['APIS', '2 third-party'], ['MODEL', 'Niche + affiliate']] },
-              { tag: 'HVAC · COMING SOON', title: 'Conway Comfort', blurb: 'Custom field service system. Job tracking, customer DB, invoicing, scheduling.', specs: [['VERTICAL', 'Trades / field service'], ['STATUS', 'In progress'], ['ARCH', 'Multi-tenant day one']] },
-            ].map((c) => (
-              <div key={c.title} className="bg-black p-5 hover:bg-zinc-950 transition group cursor-pointer">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="text-xs tracking-widest text-cyan-400 font-mono">{c.tag}</div>
-                  <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-cyan-400 group-hover:scale-110 transition" />
+              { tag: 'ESPORTS · SAAS', title: 'Serenyx League', subtitle: 'SerenyxLeague.com', link: 'https://www.serenyxleague.com', blurb: 'Fully automated league management. Player PWA, staff app, admin tooling.', specs: [['SCALE', '100+ teams · 3K members'], ['BUILD', '~1 month, solo'], ['STACK', 'Multi-tenant SaaS']] },
+              { tag: 'AUTOMOTIVE · TOOL', title: 'OffsetLabs', subtitle: 'offsetlabs.studio', link: 'https://www.offsetlabs.studio', blurb: 'Heavy-math wheel fitment calculator. NHTSA + wheelsize.com integrations.', specs: [['DOMAIN', 'JDM / stance / fitment'], ['APIS', '2 third-party'], ['MODEL', 'Niche + affiliate']] },
+              { tag: 'HVAC · COMING SOON', title: 'Conway Comfort', subtitle: 'Conway Comfort', link: '', blurb: 'Custom field service system. Job tracking, customer DB, invoicing, scheduling.', specs: [['VERTICAL', 'Trades / field service'], ['STATUS', 'In progress'], ['ARCH', 'Multi-tenant day one']] },
+            ].map((c) => {
+              const inner = (
+                <>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="text-xs tracking-widest text-cyan-400 font-mono">{c.tag}</div>
+                    <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-cyan-400 group-hover:scale-110 transition" />
+                  </div>
+                  <div className="mb-4 h-24 border border-white/10 bg-gradient-to-br from-zinc-900 to-black relative overflow-hidden">
+                    <Image
+                      src="/backbone-icon-white.png"
+                      alt=""
+                      width={24}
+                      height={24}
+                      className="absolute bottom-3 right-3 h-6 w-6 opacity-20"
+                    />
+                  </div>
+                  <h3 className="text-lg font-black mb-2">{c.subtitle}</h3>
+                  <p className="text-white/60 text-[13px] leading-relaxed mb-4">{c.blurb}</p>
+                  <div className="space-y-2 pt-4 border-t border-white/10">
+                    {c.specs.map(([label, value]) => (
+                      <div key={label} className="flex justify-between text-xs font-mono">
+                        <span className="text-white/40 tracking-widest">{label}</span>
+                        <span className="text-white/80 text-right">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              );
+              return c.link ? (
+                <a key={c.title} href={c.link} target="_blank" rel="noopener noreferrer" className="bg-black p-5 hover:bg-zinc-950 transition group cursor-pointer block">
+                  {inner}
+                </a>
+              ) : (
+                <div key={c.title} className="bg-black p-5 hover:bg-zinc-950 transition group cursor-pointer">
+                  {inner}
                 </div>
-                <div className="mb-4 h-24 border border-white/10 bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(0,229,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                  <div className="text-2xl font-black tracking-tight relative z-10 group-hover:text-cyan-400 transition">{c.title}</div>
-                </div>
-                <h3 className="text-lg font-black mb-2">{c.title}</h3>
-                <p className="text-white/60 text-[13px] leading-relaxed mb-4">{c.blurb}</p>
-                <div className="space-y-2 pt-4 border-t border-white/10">
-                  {c.specs.map(([label, value]) => (
-                    <div key={label} className="flex justify-between text-xs font-mono">
-                      <span className="text-white/40 tracking-widest">{label}</span>
-                      <span className="text-white/80 text-right">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -394,12 +417,15 @@ export default function BackboneLanding() {
       <footer className="border-t border-white/10 px-6 md:px-12 py-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-white text-black flex items-center justify-center font-black text-lg rounded-sm">B</div>
-              <div>
-                <div className="font-black tracking-[0.2em] text-sm">BACKBONE</div>
-                <div className="text-xs text-white/40 mt-0.5">custom systems for forward-thinking businesses</div>
-              </div>
+            <div>
+              <Image
+                src="/backbone-lockup-white.png"
+                alt="Backbone"
+                width={140}
+                height={32}
+                className="h-8 w-auto"
+              />
+              <div className="text-xs text-white/40 mt-2">custom systems for forward-thinking businesses</div>
             </div>
             <div className="text-xs text-white/40 tracking-widest font-mono">
               <div>USEBACKBONE.COM</div>
