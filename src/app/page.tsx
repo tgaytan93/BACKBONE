@@ -6,7 +6,6 @@ import { ArrowRight, ArrowUpRight } from 'lucide-react';
 type TerminalLine = { text: string; delay: number; accent?: boolean };
 
 export default function BackboneLanding() {
-  const [contrastValue, setContrastValue] = useState(50);
   const [uptime, setUptime] = useState(99.99);
   const [terminalLines, setTerminalLines] = useState<TerminalLine[]>([]);
   const [loopKey, setLoopKey] = useState(0);
@@ -77,7 +76,7 @@ export default function BackboneLanding() {
       </nav>
 
       <section className="px-6 md:px-12 pt-16 md:pt-24 pb-16 max-w-7xl mx-auto">
-        <div className="mb-6 font-mono text-[11px]">
+        <div className="mb-6 font-mono text-xs">
           <span className="text-cyan-400 animate-pulse">●</span>
           <span className="text-white/60 ml-2 tracking-widest">SYS_STATUS: ONLINE — ACCEPTING NEW CLIENTS</span>
         </div>
@@ -135,7 +134,7 @@ export default function BackboneLanding() {
             { label: 'AVG BUILD', value: '6 WKS' },
           ].map((stat) => (
             <div key={stat.label} className="bg-black px-5 py-4">
-              <div className="text-[10px] text-white/40 mb-1.5 tracking-widest font-mono">{stat.label}</div>
+              <div className="text-xs text-white/40 mb-1.5 tracking-widest font-mono">{stat.label}</div>
               <div className="text-xl md:text-2xl font-bold tabular-nums">{stat.value}</div>
             </div>
           ))}
@@ -146,7 +145,7 @@ export default function BackboneLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-12 gap-8 mb-10">
             <div className="md:col-span-5">
-              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">01 — THE PROBLEM</div>
+              <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">01 — THE PROBLEM</div>
               <h2 className="text-3xl md:text-4xl font-black leading-tight">Most small business software is broken on purpose.</h2>
             </div>
             <div className="md:col-span-7 md:pt-12">
@@ -156,15 +155,10 @@ export default function BackboneLanding() {
             </div>
           </div>
 
-          <div className="border border-white/10 bg-black p-6 md:p-8">
-            <div className="flex justify-between mb-4 text-[10px] tracking-widest font-mono">
-              <span className={contrastValue < 50 ? 'text-cyan-400' : 'text-white/40'}>← TEMPLATE</span>
-              <span className={contrastValue >= 50 ? 'text-cyan-400' : 'text-white/40'}>CUSTOM →</span>
-            </div>
-            <input type="range" min="0" max="100" value={contrastValue} onChange={(e) => setContrastValue(parseInt(e.target.value))} className="w-full mb-8 accent-cyan-400" />
+          <div className="border border-white/20 bg-black p-6 md:p-8">
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="border border-red-500/20 p-5 transition-all" style={{ opacity: contrastValue < 50 ? 1 : 0.25 }}>
-                <div className="text-[10px] text-red-400 tracking-widest mb-3 font-mono">✕ TEMPLATE STACK</div>
+              <div className="border-4 border-red-500/60 p-5">
+                <div className="text-xs text-red-400 tracking-[0.25em] mb-5 font-mono pt-1">✕ TEMPLATE STACK</div>
                 <ul className="space-y-2 text-white/70 text-sm">
                   <li className="flex gap-2"><span className="text-red-400">✕</span>Manual customer entry into spreadsheets</li>
                   <li className="flex gap-2"><span className="text-red-400">✕</span>Plugins break during busy season</li>
@@ -173,8 +167,8 @@ export default function BackboneLanding() {
                   <li className="flex gap-2"><span className="text-red-400">✕</span>8+ hours/week of admin</li>
                 </ul>
               </div>
-              <div className="border border-cyan-400/30 p-5 transition-all" style={{ opacity: contrastValue >= 50 ? 1 : 0.25 }}>
-                <div className="text-[10px] text-cyan-400 tracking-widest mb-3 font-mono">✓ BACKBONE SYSTEM</div>
+              <div className="border-4 border-cyan-400/70 p-5">
+                <div className="text-xs text-cyan-400 tracking-[0.25em] mb-5 font-mono pt-1">✓ BACKBONE SYSTEM</div>
                 <ul className="space-y-2 text-white/70 text-sm">
                   <li className="flex gap-2"><span className="text-cyan-400">✓</span>Auto-captured into your database</li>
                   <li className="flex gap-2"><span className="text-cyan-400">✓</span>Built on infra that doesn&apos;t fail</li>
@@ -192,7 +186,7 @@ export default function BackboneLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-12 gap-8 mb-10">
             <div className="md:col-span-5">
-              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">02 — PROOF</div>
+              <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">02 — PROOF</div>
               <h2 className="text-3xl md:text-4xl font-black leading-tight">Real systems.<br />Real operators.</h2>
             </div>
             <div className="md:col-span-7 md:pt-12">
@@ -206,20 +200,20 @@ export default function BackboneLanding() {
               { tag: 'AUTOMOTIVE · TOOL', title: 'OffsetLabs', blurb: 'Heavy-math wheel fitment calculator. NHTSA + wheelsize.com integrations.', specs: [['DOMAIN', 'JDM / stance / fitment'], ['APIS', '2 third-party'], ['MODEL', 'Niche + affiliate']] },
               { tag: 'HVAC · COMING SOON', title: 'Conway Comfort', blurb: 'Custom field service system. Job tracking, customer DB, invoicing, scheduling.', specs: [['VERTICAL', 'Trades / field service'], ['STATUS', 'In progress'], ['ARCH', 'Multi-tenant day one']] },
             ].map((c) => (
-              <div key={c.title} className="bg-black p-6 hover:bg-zinc-950 transition group cursor-pointer">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="text-[10px] tracking-widest text-cyan-400 font-mono">{c.tag}</div>
+              <div key={c.title} className="bg-black p-5 hover:bg-zinc-950 transition group cursor-pointer">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="text-xs tracking-widest text-cyan-400 font-mono">{c.tag}</div>
                   <ArrowUpRight className="w-4 h-4 text-white/30 group-hover:text-cyan-400 group-hover:scale-110 transition" />
                 </div>
-                <div className="mb-5 h-32 border border-white/10 bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center relative overflow-hidden">
+                <div className="mb-4 h-24 border border-white/10 bg-gradient-to-br from-zinc-900 to-black flex items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(rgba(0,229,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.15) 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
-                  <div className="text-3xl font-black tracking-tight relative z-10 group-hover:text-cyan-400 transition">{c.title}</div>
+                  <div className="text-2xl font-black tracking-tight relative z-10 group-hover:text-cyan-400 transition">{c.title}</div>
                 </div>
-                <h3 className="text-xl font-black mb-3">{c.title}</h3>
-                <p className="text-white/60 text-sm leading-relaxed mb-5">{c.blurb}</p>
+                <h3 className="text-lg font-black mb-2">{c.title}</h3>
+                <p className="text-white/60 text-[13px] leading-relaxed mb-4">{c.blurb}</p>
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   {c.specs.map(([label, value]) => (
-                    <div key={label} className="flex justify-between text-[11px] font-mono">
+                    <div key={label} className="flex justify-between text-xs font-mono">
                       <span className="text-white/40 tracking-widest">{label}</span>
                       <span className="text-white/80 text-right">{value}</span>
                     </div>
@@ -235,7 +229,7 @@ export default function BackboneLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-12 gap-8 mb-10">
             <div className="md:col-span-5">
-              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">03 — OFFERINGS</div>
+              <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">03 — OFFERINGS</div>
               <h2 className="text-3xl md:text-4xl font-black leading-tight">Three ways to work together.</h2>
             </div>
             <div className="md:col-span-7 md:pt-12">
@@ -249,25 +243,25 @@ export default function BackboneLanding() {
               { num: '02', name: 'Operator', price: '$20k–$30k', time: '6–10 wks', tagline: 'You stop being your own software.', featured: true, specs: ['Everything in Foundation', 'Customer portal + booking', 'Stripe payments + invoicing', 'Recurring billing', 'Full admin panel'] },
               { num: '03', name: 'Autopilot', price: '$40k–$55k', time: '3–5 mo', tagline: 'The system runs itself.', specs: ['Everything in Operator', 'Automated reminders (email/SMS)', 'Contract renewals + drip', 'Inventory + estimates', 'Reporting dashboard', 'DevOps panel — full control'] },
             ].map((tier) => (
-              <div key={tier.num} className={`bg-black p-6 hover:bg-zinc-900 transition group relative ${tier.featured ? 'border-t-2 border-t-cyan-400' : ''}`}>
-                {tier.featured && <div className="absolute top-0 right-0 bg-cyan-400 text-black text-[10px] px-2 py-1 font-bold tracking-widest">MOST COMMON</div>}
+              <div key={tier.num} className={`bg-black p-5 hover:bg-zinc-900 transition group relative ${tier.featured ? 'border-t-2 border-t-cyan-400' : ''}`}>
+                {tier.featured && <div className="absolute top-0 right-0 bg-cyan-400 text-black text-xs px-2 py-1 font-bold tracking-widest">MOST COMMON</div>}
                 <div className="flex justify-between items-baseline mb-4">
-                  <div className="text-[10px] tracking-widest text-white/40 font-mono">TIER {tier.num}</div>
-                  <div className="text-[10px] text-white/40 font-mono">{tier.time}</div>
+                  <div className="text-xs tracking-widest text-white/40 font-mono">TIER {tier.num}</div>
+                  <div className="text-xs tracking-widest text-white/40 font-mono">{tier.time}</div>
                 </div>
-                <div className="text-2xl font-black mb-2">{tier.name}</div>
-                <div className="text-xl font-bold mb-5 pb-5 border-b border-white/10 tabular-nums">{tier.price}</div>
-                <ul className="space-y-2 mb-5 text-sm text-white/70">
+                <div className="text-xl font-black mb-2">{tier.name}</div>
+                <div className="text-lg font-bold mb-4 pb-4 border-b border-white/10 tabular-nums">{tier.price}</div>
+                <ul className="space-y-1.5 mb-4 text-[13px] text-white/70">
                   {tier.specs.map((s) => (
                     <li key={s} className="flex gap-2"><span className="text-cyan-400">▸</span><span>{s}</span></li>
                   ))}
                 </ul>
-                <p className="text-cyan-400 text-sm font-semibold italic pt-4 border-t border-white/10">&ldquo;{tier.tagline}&rdquo;</p>
+                <p className="text-cyan-400 text-[13px] font-semibold italic pt-3 border-t border-white/10">&ldquo;{tier.tagline}&rdquo;</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-6 text-[11px] text-white/50 text-center tracking-widest font-mono">
+          <div className="mt-6 text-xs text-white/50 text-center tracking-widest font-mono">
             + SEO FOUNDATION ADD-ON · $1K–$2K · BUILT INTO LAUNCH
           </div>
         </div>
@@ -277,7 +271,7 @@ export default function BackboneLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-12 gap-8 mb-10">
             <div className="md:col-span-5">
-              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">04 — PROCESS</div>
+              <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">04 — PROCESS</div>
               <h2 className="text-3xl md:text-4xl font-black leading-tight">Four steps.<br />No mystery.</h2>
             </div>
             <div className="md:col-span-7 md:pt-12">
@@ -292,12 +286,12 @@ export default function BackboneLanding() {
               { num: '03', title: 'Build', desc: 'You see progress as it happens. Not a black box at the end.' },
               { num: '04', title: 'Handoff', desc: 'Real onboarding. DevOps panel. You own and operate the system.' },
             ].map((step) => (
-              <div key={step.num} className="bg-black p-5">
+              <div key={step.num} className="bg-black p-4">
                 <div className="flex items-baseline gap-3 mb-3">
                   <div className="text-cyan-400 text-sm font-bold font-mono">{step.num}</div>
-                  <h3 className="text-lg font-black">{step.title}</h3>
+                  <h3 className="text-base font-black">{step.title}</h3>
                 </div>
-                <p className="text-white/60 text-sm leading-relaxed">{step.desc}</p>
+                <p className="text-white/60 text-[13px] leading-relaxed">{step.desc}</p>
               </div>
             ))}
           </div>
@@ -308,7 +302,7 @@ export default function BackboneLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-12 gap-8 mb-10">
             <div className="md:col-span-5">
-              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">05 — FIT CHECK</div>
+              <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">05 — FIT CHECK</div>
               <h2 className="text-3xl md:text-4xl font-black leading-tight">Built for operators.<br />Not for everyone.</h2>
             </div>
             <div className="md:col-span-7 md:pt-12">
@@ -318,7 +312,7 @@ export default function BackboneLanding() {
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="border border-cyan-400/30 p-6 bg-black">
-              <div className="text-[10px] tracking-widest text-cyan-400 mb-4 font-mono">✓ FOR YOU IF</div>
+              <div className="text-xs tracking-[0.25em] text-cyan-400 mb-5 font-mono">✓ FOR YOU IF</div>
               <ul className="space-y-3 text-white/80 text-sm">
                 <li className="flex gap-2"><span className="text-cyan-400 mt-0.5">✓</span>You run a real business and need software that runs with you</li>
                 <li className="flex gap-2"><span className="text-cyan-400 mt-0.5">✓</span>You&apos;re tired of fighting Wix, plugins, or a developer who ghosted</li>
@@ -326,7 +320,7 @@ export default function BackboneLanding() {
               </ul>
             </div>
             <div className="border border-white/10 p-6 bg-black">
-              <div className="text-[10px] tracking-widest text-white/40 mb-4 font-mono">✕ NOT FOR YOU IF</div>
+              <div className="text-xs tracking-[0.25em] text-white/40 mb-5 font-mono">✕ NOT FOR YOU IF</div>
               <ul className="space-y-3 text-white/50 text-sm">
                 <li className="flex gap-2"><span className="text-white/30 mt-0.5">✕</span>You&apos;re looking for the cheapest option</li>
                 <li className="flex gap-2"><span className="text-white/30 mt-0.5">✕</span>You want a 5-page brochure site</li>
@@ -341,12 +335,12 @@ export default function BackboneLanding() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-12 gap-8 mb-10">
             <div className="md:col-span-5">
-              <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">06 — ABOUT</div>
+              <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">06 — ABOUT</div>
               <h2 className="text-3xl md:text-4xl font-black leading-tight">One person. Every line.</h2>
             </div>
             <div className="md:col-span-7 md:pt-12">
               <p className="text-white/70 text-base leading-relaxed">
-                Backbone is a one-person studio run by Tyler [Lastname] — a tradesman who codes. Every line of code, every design decision, every client call: same person. No handoffs. No juniors. No agency markup. Just systems built right, by the person who&apos;s actually building them.
+                Backbone is a one-person studio run by Tyler — a tradesman who codes. Every line of code, every design decision, every client call: same person. No handoffs. No juniors. No agency markup. Just systems built right, by the person who&apos;s actually building them.
               </p>
             </div>
           </div>
@@ -359,7 +353,7 @@ export default function BackboneLanding() {
               { label: 'AVAILABILITY', value: '1 CLIENT/MO' },
             ].map((stat) => (
               <div key={stat.label} className="bg-black px-5 py-4">
-                <div className="text-[10px] text-white/40 mb-1.5 tracking-widest font-mono">{stat.label}</div>
+                <div className="text-xs text-white/40 mb-1.5 tracking-widest font-mono">{stat.label}</div>
                 <div className="text-xl md:text-2xl font-bold tabular-nums">{stat.value}</div>
               </div>
             ))}
@@ -369,7 +363,7 @@ export default function BackboneLanding() {
 
       <section id="contact" className="border-t border-white/10 px-6 md:px-12 py-20">
         <div className="max-w-3xl mx-auto">
-          <div className="text-[10px] tracking-[0.3em] text-cyan-400 mb-3 font-mono">07 — START</div>
+          <div className="text-xs tracking-[0.3em] text-cyan-400 mb-3 font-mono">07 — START</div>
           <h2 className="text-3xl md:text-5xl font-black mb-4 leading-tight">Tell me what&apos;s broken.</h2>
           <p className="text-white/70 text-base mb-10">Every inquiry gets a real reply within 48 hours. No bots, no auto-responders.</p>
 
@@ -382,7 +376,7 @@ export default function BackboneLanding() {
               { label: 'BUDGET', placeholder: '$10k / $25k / $50k+ / Open' },
             ].map((field) => (
               <div key={field.label}>
-                <label className="text-[10px] tracking-widest text-white/50 block mb-2 font-mono">{field.label}</label>
+                <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">{field.label}</label>
                 {field.textarea ? (
                   <textarea rows={3} placeholder={field.placeholder} className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30" />
                 ) : (
@@ -404,10 +398,10 @@ export default function BackboneLanding() {
               <div className="w-8 h-8 bg-white text-black flex items-center justify-center font-black text-lg rounded-sm">B</div>
               <div>
                 <div className="font-black tracking-[0.2em] text-sm">BACKBONE</div>
-                <div className="text-[10px] text-white/40 mt-0.5">custom systems for forward-thinking businesses</div>
+                <div className="text-xs text-white/40 mt-0.5">custom systems for forward-thinking businesses</div>
               </div>
             </div>
-            <div className="text-[10px] text-white/40 tracking-widest font-mono">
+            <div className="text-xs text-white/40 tracking-widest font-mono">
               <div>USEBACKBONE.COM</div>
               <div className="mt-0.5">© 2026 — BUILT ON PURPOSE. ENGINEERED TO LAST.</div>
             </div>
