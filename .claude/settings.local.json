@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Force -Recurse E:\\\\backbone\\\\src | Where-Object { -not $_.PSIsContainer } | Format-Table FullName -AutoSize)",
+      "PowerShell(npm install *)",
+      "PowerShell(npm run *)",
+      "PowerShell(git check-ignore *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
