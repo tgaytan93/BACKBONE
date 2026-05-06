@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { resend, appendSignature } from '@/lib/resend/client';
 
@@ -23,8 +22,8 @@ function firstName(name: string): string {
   return first && first.length > 0 ? first : 'there';
 }
 
-const AUTO_REPLY_FROM = 'Backbone Studio <hello@backbonemade.com>';
-const AUTO_REPLY_FROM_ADDRESS = 'hello@backbonemade.com';
+const AUTO_REPLY_FROM = 'Tyler Gaytan <tyler@backbonemade.com>';
+const AUTO_REPLY_FROM_ADDRESS = 'tyler@backbonemade.com';
 const AUTO_REPLY_REPLY_TO = 'tyler@backbonemade.com';
 const AUTO_REPLY_SUBJECT = 'Got your message';
 
@@ -57,8 +56,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createClient();
-  const { data: inserted, error } = await supabase
+  const admin = createAdminClient();
+  const { data: inserted, error } = await admin
     .from('submissions')
     .insert({
       name,
@@ -91,7 +90,6 @@ export async function POST(request: Request) {
     if (sendResult.error) {
       console.error('auto-reply send failed', sendResult.error);
     } else {
-      const admin = createAdminClient();
       const { error: logError } = await admin.from('messages').insert({
         submission_id: submissionId,
         direction: 'outbound',
