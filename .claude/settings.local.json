@@ -10,7 +10,9 @@
       "Bash(git push *)",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(grep -n \"## 10\\\\|Spinner\\\\|## Assessment\\\\|^---$\" E:/backbone/SERENYX-ADMIN-UI-EXPORT.md)",
+      "Bash(npx shadcn@latest add button input label checkbox textarea select dialog table badge card --yes --overwrite)"
     ]
   }
 }

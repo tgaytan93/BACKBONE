@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# admin-ui lift source bundle (reference only, not part of the project)
+SERENYX-ADMIN-UI-EXPORT.md
