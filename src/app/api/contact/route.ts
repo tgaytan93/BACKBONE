@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getBackboneHqOrgId } from '@/lib/orgs/constants';
 import { resend, appendSignature } from '@/lib/resend/client';
 
 type ContactPayload = {
@@ -57,9 +58,11 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+  const orgId = await getBackboneHqOrgId();
   const { data: inserted, error } = await admin
     .from('submissions')
     .insert({
+      org_id: orgId,
       name,
       email,
       business: asTrimmedString(payload.business),
@@ -91,6 +94,7 @@ export async function POST(request: Request) {
       console.error('auto-reply send failed', sendResult.error);
     } else {
       const { error: logError } = await admin.from('messages').insert({
+        org_id: orgId,
         submission_id: submissionId,
         direction: 'outbound',
         subject: AUTO_REPLY_SUBJECT,

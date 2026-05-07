@@ -141,7 +141,8 @@ function classifyFilter(
 }
 
 export async function matchAndInsert(
-  parsed: ParsedInboundMessage
+  parsed: ParsedInboundMessage,
+  orgId: string
 ): Promise<MatchOutcome> {
   const fromEmail = parsed.from_email.toLowerCase();
 
@@ -155,10 +156,12 @@ export async function matchAndInsert(
 
   const admin = createAdminClient();
 
-  // If multiple submissions share an email, prefer the most recent one.
+  // Scope match lookup to the org we're syncing. If multiple submissions in
+  // this org share an email, prefer the most recent one.
   const { data: submission, error: lookupError } = await admin
     .from('submissions')
     .select('id')
+    .eq('org_id', orgId)
     .ilike('email', fromEmail)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -185,6 +188,7 @@ export async function matchAndInsert(
     .from('messages')
     .upsert(
       {
+        org_id: orgId,
         submission_id: submissionId,
         direction: 'inbound',
         status,

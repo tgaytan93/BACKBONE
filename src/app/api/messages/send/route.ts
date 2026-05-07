@@ -49,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: submission, error: lookupError } = await supabase
     .from('submissions')
-    .select('id, email, status')
+    .select('id, email, status, org_id')
     .eq('id', submissionId)
     .single();
 
@@ -92,6 +92,7 @@ export async function POST(request: Request) {
   const { data: inserted, error: insertError } = await supabase
     .from('messages')
     .insert({
+      org_id: submission.org_id,
       submission_id: submissionId,
       direction: 'outbound',
       subject: finalSubject,

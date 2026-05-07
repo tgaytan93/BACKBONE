@@ -2,6 +2,7 @@ import 'server-only';
 import { google, type gmail_v1 } from 'googleapis';
 import { createAuthedOAuthClient } from '@/lib/google/oauth';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { getBackboneHqOrgId } from '@/lib/orgs/constants';
 import {
   matchAndInsert,
   extractEmail,
@@ -114,7 +115,7 @@ function parseMessage(msg: gmail_v1.Schema$Message): ParsedInboundMessage | null
   };
 }
 
-async function readSyncState(): Promise<{
+async function readSyncState(orgId: string): Promise<{
   id: string;
   last_history_id: string | null;
 }> {
@@ -122,6 +123,7 @@ async function readSyncState(): Promise<{
   const { data, error } = await admin
     .from('gmail_sync_state')
     .select('id, last_history_id')
+    .eq('org_id', orgId)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -134,7 +136,7 @@ async function readSyncState(): Promise<{
 
   const { data: created, error: createError } = await admin
     .from('gmail_sync_state')
-    .insert({ last_history_id: null })
+    .insert({ org_id: orgId, last_history_id: null })
     .select('id, last_history_id')
     .single();
   if (createError || !created) {
@@ -258,7 +260,8 @@ function emptyProcessResult(): ProcessResult {
 
 async function processIds(
   gmail: gmail_v1.Gmail,
-  ids: string[]
+  ids: string[],
+  orgId: string
 ): Promise<ProcessResult> {
   const result = emptyProcessResult();
 
@@ -279,7 +282,7 @@ async function processIds(
       console.log(
         `[gmail/poll] ${id} from=${parsed.from_email} subject=${parsed.subject ?? '(none)'}`
       );
-      const outcome: MatchOutcome = await matchAndInsert(parsed);
+      const outcome: MatchOutcome = await matchAndInsert(parsed, orgId);
       if (outcome.kind === 'inserted_attached') result.attached++;
       else if (outcome.kind === 'inserted_unmatched') result.unmatched++;
       else if (outcome.kind === 'duplicate') result.duplicates++;
@@ -305,10 +308,11 @@ async function processIds(
 
 async function runBackfill(
   gmail: gmail_v1.Gmail,
-  query: string
+  query: string,
+  orgId: string
 ): Promise<{ found: number } & ProcessResult> {
   const ids = await listInboxIdsByQuery(gmail, query);
-  const result = await processIds(gmail, ids);
+  const result = await processIds(gmail, ids, orgId);
   return { found: ids.length, ...result };
 }
 
@@ -348,7 +352,10 @@ export async function syncGmail(opts?: {
 }): Promise<SyncResult> {
   const recover = opts?.mode === 'recover';
   const gmail = getGmail();
-  const state = await readSyncState();
+  // Phase 5 v1: Tyler's Gmail belongs to the backbone-hq tenant. When other
+  // tenants get their own Gmail integration, this becomes a per-org call.
+  const orgId = await getBackboneHqOrgId();
+  const state = await readSyncState(orgId);
   const historyIdBefore = state.last_history_id;
 
   console.log(
@@ -358,7 +365,7 @@ export async function syncGmail(opts?: {
   // RECOVER: scan a 7d window through the matcher, deduped by gmail_message_id.
   // Watermark is left untouched so subsequent normal runs continue cleanly.
   if (recover) {
-    const backfill = await runBackfill(gmail, RECOVER_QUERY);
+    const backfill = await runBackfill(gmail, RECOVER_QUERY, orgId);
     return buildResult(
       {
         first_run: false,
@@ -375,7 +382,7 @@ export async function syncGmail(opts?: {
 
   // FIRST RUN: backfill recent inbox via time-based query, then set watermark.
   if (!historyIdBefore) {
-    const backfill = await runBackfill(gmail, DEFAULT_BACKFILL_QUERY);
+    const backfill = await runBackfill(gmail, DEFAULT_BACKFILL_QUERY, orgId);
 
     const profile = await gmail.users.getProfile({ userId: 'me' });
     const historyId = profile.data.historyId;
@@ -404,7 +411,7 @@ export async function syncGmail(opts?: {
     const { messageIds, latestHistoryId, rawHistoryChanges } =
       await fetchAddedMessageIds(gmail, historyIdBefore);
 
-    const result = await processIds(gmail, messageIds);
+    const result = await processIds(gmail, messageIds, orgId);
 
     if (latestHistoryId) await writeSyncState(state.id, latestHistoryId);
 
@@ -432,7 +439,7 @@ export async function syncGmail(opts?: {
     console.warn(
       `[gmail/poll] history watermark ${historyIdBefore} expired (404), falling back to backfill`
     );
-    const backfill = await runBackfill(gmail, DEFAULT_BACKFILL_QUERY);
+    const backfill = await runBackfill(gmail, DEFAULT_BACKFILL_QUERY, orgId);
 
     const profile = await gmail.users.getProfile({ userId: 'me' });
     const historyId = profile.data.historyId ?? null;

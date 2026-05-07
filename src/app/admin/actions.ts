@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { syncGmail } from '@/lib/gmail/poll';
+import { logAuditEvent } from '@/lib/audit/log';
+import { getBackboneHqOrgId } from '@/lib/orgs/constants';
 
 const ALLOWED_STATUSES = [
   'new',
@@ -28,6 +30,17 @@ export async function updateStatus(id: string, status: Status) {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Unauthorized.' };
+
+  const { data: before } = await supabase
+    .from('submissions')
+    .select('id, org_id, status')
+    .eq('id', id)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('submissions')
     .update({ status })
@@ -36,6 +49,15 @@ export async function updateStatus(id: string, status: Status) {
   if (error) {
     return { error: error.message };
   }
+
+  await logAuditEvent({
+    action: 'submission.update_status',
+    resourceType: 'submission',
+    resourceId: id,
+    orgId: before?.org_id ?? null,
+    before: before ? { status: before.status } : null,
+    after: { status },
+  });
 
   revalidatePath(`/admin/submissions/${id}`);
   revalidatePath('/admin');
@@ -92,11 +114,30 @@ export async function attachMessage(messageId: string, submissionId: string) {
   if (!messageId || !submissionId) {
     return { error: 'messageId and submissionId required.' };
   }
+
+  const { data: before } = await supabase
+    .from('messages')
+    .select('id, org_id, submission_id, status')
+    .eq('id', messageId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('messages')
     .update({ submission_id: submissionId, status: 'attached' })
     .eq('id', messageId);
   if (error) return { error: error.message };
+
+  await logAuditEvent({
+    action: 'message.attach',
+    resourceType: 'message',
+    resourceId: messageId,
+    orgId: before?.org_id ?? null,
+    before: before
+      ? { submission_id: before.submission_id, status: before.status }
+      : null,
+    after: { submission_id: submissionId, status: 'attached' },
+  });
+
   revalidatePath('/admin');
   revalidatePath(`/admin/submissions/${submissionId}`);
   return { ok: true };
@@ -123,12 +164,17 @@ export async function createAndAttachMessage(
       ? payload.whats_broken.trim()
       : 'Imported from email';
 
+  // Phase 5 v1: triage from Tyler's panel always creates within backbone-hq.
+  // V2 will use the actor's session orgId (or impersonation target).
+  const orgId = await getBackboneHqOrgId();
+
   // Use admin client so the new submission insert bypasses the SELECT-on-insert
   // RLS issue we hit in Phase 2.
   const admin = createAdminClient();
   const { data: created, error: insertError } = await admin
     .from('submissions')
     .insert({
+      org_id: orgId,
       name,
       email,
       whats_broken: whatsBroken,
@@ -146,6 +192,18 @@ export async function createAndAttachMessage(
     .eq('id', messageId);
   if (updateError) return { error: updateError.message };
 
+  await logAuditEvent({
+    action: 'message.create_and_attach',
+    resourceType: 'message',
+    resourceId: messageId,
+    orgId,
+    after: {
+      submission_id: created.id,
+      submission_name: name,
+      submission_email: email,
+    },
+  });
+
   revalidatePath('/admin');
   revalidatePath(`/admin/submissions/${created.id}`);
   return { ok: true, submission_id: created.id };
@@ -160,6 +218,13 @@ export async function markMessageRead(messageId: string) {
     return { error: 'Unauthorized.' };
   }
   if (!messageId) return { error: 'messageId required.' };
+
+  const { data: before } = await supabase
+    .from('messages')
+    .select('id, org_id, read_at')
+    .eq('id', messageId)
+    .maybeSingle();
+
   // Idempotent: only updates if currently unread.
   const { error } = await supabase
     .from('messages')
@@ -167,6 +232,16 @@ export async function markMessageRead(messageId: string) {
     .eq('id', messageId)
     .is('read_at', null);
   if (error) return { error: error.message };
+
+  // Only log if there was a read transition (was unread, now read).
+  if (before && before.read_at === null) {
+    await logAuditEvent({
+      action: 'message.mark_read',
+      resourceType: 'message',
+      resourceId: messageId,
+      orgId: before.org_id ?? null,
+    });
+  }
   return { ok: true };
 }
 
@@ -180,14 +255,30 @@ export async function deleteSubmission(submissionId: string) {
   }
   if (!submissionId) return { error: 'submissionId required.' };
 
-  // Use admin client because submissions has no DELETE RLS policy.
-  // Messages cascade automatically via the FK on delete cascade.
+  // Capture before snapshot for audit (admin client to bypass RLS for the lookup
+  // in case the row was already mid-RLS-restriction).
   const admin = createAdminClient();
+  const { data: before } = await admin
+    .from('submissions')
+    .select('*')
+    .eq('id', submissionId)
+    .maybeSingle();
+
+  // Use admin client because submissions has no DELETE RLS policy for owners.
+  // Messages cascade automatically via the FK on delete cascade.
   const { error } = await admin
     .from('submissions')
     .delete()
     .eq('id', submissionId);
   if (error) return { error: error.message };
+
+  await logAuditEvent({
+    action: 'submission.delete',
+    resourceType: 'submission',
+    resourceId: submissionId,
+    orgId: before?.org_id ?? null,
+    before: before ?? null,
+  });
 
   revalidatePath('/admin');
   return { ok: true };
@@ -203,11 +294,25 @@ export async function deleteMessage(messageId: string, submissionId?: string) {
   }
   if (!messageId) return { error: 'messageId required.' };
 
-  // Use admin client because messages has no DELETE RLS policy.
-  // Hard delete: row is gone from history.
   const admin = createAdminClient();
+  const { data: before } = await admin
+    .from('messages')
+    .select('*')
+    .eq('id', messageId)
+    .maybeSingle();
+
+  // Use admin client because messages has no DELETE RLS policy for owners.
+  // Hard delete: row is gone from history.
   const { error } = await admin.from('messages').delete().eq('id', messageId);
   if (error) return { error: error.message };
+
+  await logAuditEvent({
+    action: 'message.delete',
+    resourceType: 'message',
+    resourceId: messageId,
+    orgId: before?.org_id ?? null,
+    before: before ?? null,
+  });
 
   if (submissionId) {
     revalidatePath(`/admin/submissions/${submissionId}`);
@@ -225,11 +330,28 @@ export async function dismissMessage(messageId: string) {
     return { error: 'Unauthorized.' };
   }
   if (!messageId) return { error: 'messageId required.' };
+
+  const { data: before } = await supabase
+    .from('messages')
+    .select('id, org_id, status')
+    .eq('id', messageId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('messages')
     .update({ status: 'archived' })
     .eq('id', messageId);
   if (error) return { error: error.message };
+
+  await logAuditEvent({
+    action: 'message.dismiss',
+    resourceType: 'message',
+    resourceId: messageId,
+    orgId: before?.org_id ?? null,
+    before: before ? { status: before.status } : null,
+    after: { status: 'archived' },
+  });
+
   revalidatePath('/admin');
   return { ok: true };
 }
