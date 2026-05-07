@@ -1,15 +1,25 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { updateStatus } from '@/app/admin/actions';
 import { STATUSES, type Status } from '@/app/admin/status-pill';
 
 const ACTIVE_CLS: Record<Status, string> = {
   new: 'bg-cyan-400 text-black border-cyan-400',
+  needs_response: 'bg-orange-400 text-black border-orange-400',
   contacted: 'bg-white text-black border-white',
   qualified: 'bg-yellow-400 text-black border-yellow-400',
   won: 'bg-green-400 text-black border-green-400',
   lost: 'bg-red-500/80 text-black border-red-500/80',
+};
+
+const LABELS: Record<Status, string> = {
+  new: 'NEW',
+  needs_response: 'NEEDS RESPONSE',
+  contacted: 'CONTACTED',
+  qualified: 'QUALIFIED',
+  won: 'WON',
+  lost: 'LOST',
 };
 
 export default function StatusButtons({
@@ -22,6 +32,13 @@ export default function StatusButtons({
   const [status, setStatus] = useState<Status>(initialStatus);
   const [error, setError] = useState('');
   const [isPending, startTransition] = useTransition();
+
+  // Sync local state when the prop changes after server-side transitions
+  // (e.g. auto-transition to 'contacted' after sending a manual reply, which
+  // happens via the send route, not this component's click handler).
+  useEffect(() => {
+    setStatus(initialStatus);
+  }, [initialStatus]);
 
   function handleClick(next: Status) {
     if (next === status || isPending) return;
@@ -54,7 +71,7 @@ export default function StatusButtons({
                   : 'border-white/20 text-white/60 hover:border-cyan-400 hover:text-cyan-400'
               }`}
             >
-              {s}
+              {LABELS[s]}
             </button>
           );
         })}

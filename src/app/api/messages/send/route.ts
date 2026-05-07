@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { resend, appendSignature, bodyHasSignature } from '@/lib/resend/client';
 
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: submission, error: lookupError } = await supabase
     .from('submissions')
-    .select('id, email')
+    .select('id, email, status')
     .eq('id', submissionId)
     .single();
 
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
   }
 
   const finalBody = bodyHasSignature(rawBody) ? rawBody : appendSignature(rawBody);
-  const finalSubject = subject ?? 'Re: Got your message';
+  const finalSubject = subject ?? 'Re: Tyler from Backbone';
   const toAddress = submission.email as string;
 
   let resendId: string | null = null;
@@ -109,6 +110,23 @@ export async function POST(request: Request) {
       { error: 'Email sent but failed to log.' },
       { status: 500 }
     );
+  }
+
+  // Auto-transition submission status: a manual outbound send moves
+  // 'new' or 'needs_response' to 'contacted'. Later states are left alone.
+  const currentStatus = submission.status as string | null;
+  if (currentStatus === 'new' || currentStatus === 'needs_response') {
+    const { error: statusError } = await supabase
+      .from('submissions')
+      .update({ status: 'contacted' })
+      .eq('id', submissionId)
+      .in('status', ['new', 'needs_response']);
+    if (statusError) {
+      console.error('status transition to contacted failed', statusError);
+    } else {
+      revalidatePath('/admin');
+      revalidatePath(`/admin/submissions/${submissionId}`);
+    }
   }
 
   return NextResponse.json({ ok: true, id: inserted.id });

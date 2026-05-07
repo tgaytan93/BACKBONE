@@ -25,7 +25,7 @@ function firstName(name: string): string {
 const AUTO_REPLY_FROM = 'Tyler Gaytan <tyler@backbonemade.com>';
 const AUTO_REPLY_FROM_ADDRESS = 'tyler@backbonemade.com';
 const AUTO_REPLY_REPLY_TO = 'tyler@backbonemade.com';
-const AUTO_REPLY_SUBJECT = 'Got your message';
+const AUTO_REPLY_SUBJECT = 'Tyler from Backbone';
 
 function buildAutoReplyBody(name: string): string {
   const greeting = firstName(name);

@@ -4,8 +4,10 @@ import { createClient } from '@/lib/supabase/server';
 import AdminNav from '@/app/admin/admin-nav';
 import StatusButtons from './status-buttons';
 import NotesEditor from './notes-editor';
-import MessageThread from './message-thread';
+import ThreadLive from './thread-live';
+import { type Message } from './message-thread';
 import ReplyComposer from './reply-composer';
+import SyncButton from './sync-button';
 import { type Status } from '@/app/admin/status-pill';
 
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
@@ -19,6 +21,8 @@ const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
 export const metadata = {
   title: 'Backbone — Submission',
 };
+
+export const dynamic = 'force-dynamic';
 
 export default async function SubmissionDetailPage({
   params,
@@ -46,13 +50,44 @@ export default async function SubmissionDetailPage({
     notFound();
   }
 
+  // Auto-transition: viewing a 'new' submission moves it to 'needs_response'
+  // so the dashboard NEW pill clears once Tyler has actually seen it.
+  if (submission.status === 'new') {
+    const { error: transitionError } = await supabase
+      .from('submissions')
+      .update({ status: 'needs_response' })
+      .eq('id', id)
+      .eq('status', 'new');
+    if (transitionError) {
+      console.error(
+        '[submission detail] auto-transition new -> needs_response failed',
+        transitionError
+      );
+    } else {
+      submission.status = 'needs_response';
+    }
+  }
+
   const { data: messageRows } = await supabase
     .from('messages')
     .select('*')
     .eq('submission_id', id)
     .order('sent_at', { ascending: true });
 
-  const messages = messageRows ?? [];
+  const messages: Message[] = messageRows ?? [];
+
+  // Compute default subject for the composer. The thread inherits whatever
+  // subject the auto-reply or last message used, prefixed with "Re: " if needed.
+  // Empty string only if there's no prior message at all (rare).
+  const lastWithSubject = [...messages]
+    .reverse()
+    .find((m) => m.subject && m.subject.trim().length > 0);
+  const lastSubject = lastWithSubject?.subject?.trim() ?? '';
+  const defaultSubject = lastSubject
+    ? lastSubject.toLowerCase().startsWith('re:')
+      ? lastSubject
+      : `Re: ${lastSubject}`
+    : '';
 
   const specs: Array<[string, string]> = [
     ['NAME', submission.name],
@@ -116,15 +151,22 @@ export default async function SubmissionDetailPage({
         </div>
 
         <div className="mb-10">
-          <div className="text-xs tracking-[0.25em] text-white/40 mb-4 font-mono">THREAD</div>
-          <MessageThread messages={messages} />
+          <div className="flex items-center justify-between mb-4 gap-4">
+            <div className="text-xs tracking-[0.25em] text-white/40 font-mono">THREAD</div>
+            <SyncButton submissionId={submission.id} variant="secondary" />
+          </div>
+          <ThreadLive
+            submissionId={submission.id}
+            initialMessages={messages}
+          />
         </div>
 
         <div className="mb-10">
-          <div className="text-xs tracking-[0.25em] text-white/40 mb-4 font-mono">REPLY</div>
+          <div className="text-xs tracking-[0.25em] text-white/40 mb-4 font-mono">MESSAGE</div>
           <ReplyComposer
             submissionId={submission.id}
             recipientEmail={submission.email ?? null}
+            defaultSubject={defaultSubject}
           />
         </div>
 

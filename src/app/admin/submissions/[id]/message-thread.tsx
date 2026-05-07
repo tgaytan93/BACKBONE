@@ -1,4 +1,4 @@
-type Message = {
+export type Message = {
   id: string;
   direction: 'outbound' | 'inbound';
   subject: string | null;
@@ -7,6 +7,7 @@ type Message = {
   to_address: string;
   sent_at: string;
   is_auto_reply: boolean;
+  read_at: string | null;
 };
 
 const MESSAGE_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
@@ -43,10 +44,14 @@ export default function MessageThread({ messages }: { messages: Message[] }) {
     <div className="space-y-4">
       {messages.map((m) => {
         const isOutbound = m.direction === 'outbound';
+        const accentBorder = isOutbound
+          ? 'border-l-2 border-l-cyan-400/70'
+          : 'border-l-2 border-l-white/70';
+        const containerAlign = isOutbound ? '' : 'md:ml-8';
         return (
           <div
             key={m.id}
-            className="relative border border-white/10 bg-zinc-950 p-5"
+            className={`relative border border-white/10 bg-zinc-950 p-5 ${accentBorder} ${containerAlign}`}
           >
             {m.is_auto_reply && (
               <div className="absolute top-3 right-3 text-[10px] tracking-[0.25em] font-mono text-white/50 border border-white/20 px-2 py-0.5">

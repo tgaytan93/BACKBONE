@@ -8,12 +8,15 @@ type SendState = 'idle' | 'sending' | 'error';
 export default function ReplyComposer({
   submissionId,
   recipientEmail,
+  defaultSubject,
 }: {
   submissionId: string;
   recipientEmail: string | null;
+  defaultSubject: string;
 }) {
   const router = useRouter();
-  const [subject, setSubject] = useState('Re: Got your message');
+  const [subject, setSubject] = useState(defaultSubject);
+  const [showSubject, setShowSubject] = useState(defaultSubject.length === 0);
   const [body, setBody] = useState('');
   const [state, setState] = useState<SendState>('idle');
   const [error, setError] = useState('');
@@ -48,7 +51,8 @@ export default function ReplyComposer({
         throw new Error(data.error || 'Send failed.');
       }
 
-      setSubject('Re: Got your message');
+      setSubject(defaultSubject);
+      setShowSubject(defaultSubject.length === 0);
       setBody('');
       setState('idle');
       router.refresh();
@@ -69,18 +73,36 @@ export default function ReplyComposer({
 
   return (
     <form onSubmit={handleSubmit} className="border border-white/10 bg-zinc-950 p-5 space-y-4">
-      <div>
-        <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">
-          SUBJECT
-        </label>
-        <input
-          type="text"
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          disabled={disabled}
-          className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
-        />
-      </div>
+      {showSubject ? (
+        <div>
+          <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">
+            SUBJECT
+          </label>
+          <input
+            type="text"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Subject"
+            disabled={disabled}
+            className="w-full bg-transparent border border-white/20 px-3 py-2 text-sm focus:outline-none focus:border-cyan-400 transition text-white placeholder-white/30 disabled:opacity-50"
+          />
+        </div>
+      ) : (
+        <div className="flex items-baseline justify-between gap-3">
+          <div className="text-xs font-mono text-white/40 truncate">
+            <span className="tracking-widest text-white/30">SUBJECT</span>{' '}
+            <span className="text-white/60">{subject}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowSubject(true)}
+            disabled={disabled}
+            className="text-[10px] tracking-[0.25em] font-mono uppercase text-white/40 hover:text-cyan-400 transition disabled:opacity-40"
+          >
+            Edit subject
+          </button>
+        </div>
+      )}
       <div>
         <label className="text-xs tracking-widest text-white/50 block mb-2 font-mono">
           BODY
