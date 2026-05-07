@@ -53,6 +53,14 @@ export default function ThreadLive({
           ) {
             const m = payload.new as Message;
             upsertMessage(m);
+          } else if (payload.eventType === 'DELETE') {
+            const oldM = payload.old as Partial<Message>;
+            if (!oldM.id) return;
+            console.log(
+              `[thread] delete ${oldM.id} for submission ${submissionId}`
+            );
+            setMessages((prev) => prev.filter((x) => x.id !== oldM.id));
+            markedRef.current.delete(oldM.id);
           }
         }
       )

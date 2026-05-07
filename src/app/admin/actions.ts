@@ -170,6 +170,52 @@ export async function markMessageRead(messageId: string) {
   return { ok: true };
 }
 
+export async function deleteSubmission(submissionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: 'Unauthorized.' };
+  }
+  if (!submissionId) return { error: 'submissionId required.' };
+
+  // Use admin client because submissions has no DELETE RLS policy.
+  // Messages cascade automatically via the FK on delete cascade.
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from('submissions')
+    .delete()
+    .eq('id', submissionId);
+  if (error) return { error: error.message };
+
+  revalidatePath('/admin');
+  return { ok: true };
+}
+
+export async function deleteMessage(messageId: string, submissionId?: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: 'Unauthorized.' };
+  }
+  if (!messageId) return { error: 'messageId required.' };
+
+  // Use admin client because messages has no DELETE RLS policy.
+  // Hard delete: row is gone from history.
+  const admin = createAdminClient();
+  const { error } = await admin.from('messages').delete().eq('id', messageId);
+  if (error) return { error: error.message };
+
+  if (submissionId) {
+    revalidatePath(`/admin/submissions/${submissionId}`);
+  }
+  revalidatePath('/admin');
+  return { ok: true };
+}
+
 export async function dismissMessage(messageId: string) {
   const supabase = await createClient();
   const {

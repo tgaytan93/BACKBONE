@@ -8,6 +8,7 @@ export type Message = {
   sent_at: string;
   is_auto_reply: boolean;
   read_at: string | null;
+  submission_id?: string | null;
 };
 
 const MESSAGE_DATE_FORMAT = new Intl.DateTimeFormat('en-US', {

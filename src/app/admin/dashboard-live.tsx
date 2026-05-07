@@ -7,6 +7,7 @@ import SyncButton from './submissions/[id]/sync-button';
 import RecoverButton from './recover-button';
 import StatusPill from './status-pill';
 import UnmatchedRow from './unmatched-row';
+import SubmissionKebab from './submission-kebab';
 import type {
   Submission,
   RecentInbound,
@@ -73,6 +74,8 @@ export default function DashboardLive({
   initial24hCount: number;
   initialUnmatched: UnmatchedMessage[];
 }) {
+  const [submissions, setSubmissions] =
+    useState<Submission[]>(initialSubmissions);
   const [recentInbound, setRecentInbound] = useState<RecentInbound[]>(
     initialRecentInbound
   );
@@ -168,7 +171,7 @@ export default function DashboardLive({
 
     console.log('[dashboard] subscribing to messages channel');
 
-    const channel = supabase
+    const messagesChannel = supabase
       .channel('admin-dashboard-messages')
       .on(
         'postgres_changes',
@@ -207,7 +210,6 @@ export default function DashboardLive({
           if (payload.eventType === 'UPDATE') {
             const newM = payload.new as RawMessage;
 
-            // unmatched -> attached: triage
             if (newM.status === 'attached' && newM.submission_id) {
               setUnmatched((prev) => {
                 const wasUnmatched = prev.some((x) => x.id === newM.id);
@@ -241,7 +243,6 @@ export default function DashboardLive({
               });
             }
 
-            // read_at: null -> non-null (mark read). Independent of status changes.
             if (
               newM.status === 'attached' &&
               newM.submission_id &&
@@ -262,23 +263,135 @@ export default function DashboardLive({
               });
             }
           }
+
+          if (payload.eventType === 'DELETE') {
+            const oldM = payload.old as Partial<RawMessage>;
+            if (!oldM.id) return;
+            console.log(`[dashboard] delete message ${oldM.id}`, oldM);
+
+            setRecentInbound((prev) =>
+              prev.filter((x) => x.id !== oldM.id)
+            );
+            setUnmatched((prev) => prev.filter((x) => x.id !== oldM.id));
+
+            if (oldM.status === 'attached' && oldM.submission_id) {
+              const sid = oldM.submission_id;
+              setInboundCounts((prev) => {
+                const cur = prev[sid] ?? 0;
+                if (cur <= 0) return prev;
+                return { ...prev, [sid]: cur - 1 };
+              });
+              if (oldM.read_at === null) {
+                setUnreadCounts((prev) => {
+                  const cur = prev[sid] ?? 0;
+                  if (cur <= 0) return prev;
+                  return { ...prev, [sid]: cur - 1 };
+                });
+              }
+              if (oldM.sent_at) {
+                const t = new Date(oldM.sent_at).getTime();
+                if (!Number.isNaN(t) && Date.now() - t <= ONE_DAY_MS) {
+                  setCount24h((c) => Math.max(0, c - 1));
+                }
+              }
+            }
+          }
         }
       )
       .subscribe((status) => {
-        console.log(`[dashboard] channel status: ${status}`);
+        console.log(`[dashboard] messages channel status: ${status}`);
       });
 
     return () => {
       console.log('[dashboard] unsubscribing messages channel');
-      supabase.removeChannel(channel);
+      supabase.removeChannel(messagesChannel);
     };
   }, [initialSubmissions]);
 
+  // Submissions realtime: kebab status changes and deletes need to propagate
+  // to all open dashboards. Also catches form submissions creating new rows.
+  useEffect(() => {
+    const supabase = createClient();
+    console.log('[dashboard] subscribing to submissions channel');
+
+    const submissionsChannel = supabase
+      .channel('admin-dashboard-submissions')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'submissions',
+        },
+        (payload) => {
+          console.log(
+            `[dashboard] submission event ${payload.eventType}`,
+            payload.new ?? payload.old
+          );
+
+          if (payload.eventType === 'INSERT') {
+            const s = payload.new as Submission;
+            setSubmissions((prev) => {
+              if (prev.some((x) => x.id === s.id)) return prev;
+              const next = [s, ...prev];
+              next.sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+              );
+              return next;
+            });
+            return;
+          }
+
+          if (payload.eventType === 'UPDATE') {
+            const s = payload.new as Submission;
+            setSubmissions((prev) =>
+              prev.map((row) => (row.id === s.id ? { ...row, ...s } : row))
+            );
+            return;
+          }
+
+          if (payload.eventType === 'DELETE') {
+            const oldS = payload.old as Partial<Submission>;
+            if (!oldS.id) return;
+            const sid = oldS.id;
+            console.log(`[dashboard] delete submission ${sid}`);
+
+            setSubmissions((prev) => prev.filter((row) => row.id !== sid));
+            setInboundCounts((prev) => {
+              if (!(sid in prev)) return prev;
+              const next = { ...prev };
+              delete next[sid];
+              return next;
+            });
+            setUnreadCounts((prev) => {
+              if (!(sid in prev)) return prev;
+              const next = { ...prev };
+              delete next[sid];
+              return next;
+            });
+            setRecentInbound((prev) =>
+              prev.filter((m) => m.submission_id !== sid)
+            );
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`[dashboard] submissions channel status: ${status}`);
+      });
+
+    return () => {
+      console.log('[dashboard] unsubscribing submissions channel');
+      supabase.removeChannel(submissionsChannel);
+    };
+  }, []);
+
   const counts = {
-    total: initialSubmissions.length,
-    new: initialSubmissions.filter((r) => r.status === 'new').length,
-    contacted: initialSubmissions.filter((r) => r.status === 'contacted').length,
-    won: initialSubmissions.filter((r) => r.status === 'won').length,
+    total: submissions.length,
+    new: submissions.filter((r) => r.status === 'new').length,
+    contacted: submissions.filter((r) => r.status === 'contacted').length,
+    won: submissions.filter((r) => r.status === 'won').length,
   };
 
   const tiles = [
@@ -347,7 +460,7 @@ export default function DashboardLive({
               <UnmatchedRow
                 key={m.id}
                 message={m}
-                submissions={initialSubmissions}
+                submissions={submissions}
               />
             ))}
           </ul>
@@ -369,21 +482,13 @@ export default function DashboardLive({
             <ul>
               {recentInbound.map((m) => {
                 const isUnread = m.read_at === null;
-                const stampCls = isUnread
-                  ? 'text-white/60'
-                  : 'text-white/30';
+                const stampCls = isUnread ? 'text-white/60' : 'text-white/30';
                 const nameCls = isUnread
                   ? 'text-white font-bold'
                   : 'text-white/50 font-normal';
-                const fromCls = isUnread
-                  ? 'text-white/70'
-                  : 'text-white/40';
-                const subjectCls = isUnread
-                  ? 'text-white'
-                  : 'text-white/50';
-                const snippetCls = isUnread
-                  ? 'text-white/60'
-                  : 'text-white/35';
+                const fromCls = isUnread ? 'text-white/70' : 'text-white/40';
+                const subjectCls = isUnread ? 'text-white' : 'text-white/50';
+                const snippetCls = isUnread ? 'text-white/60' : 'text-white/35';
                 return (
                   <li
                     key={m.id}
@@ -426,7 +531,7 @@ export default function DashboardLive({
       </section>
 
       <section className="px-6 md:px-12 pb-20 max-w-7xl mx-auto">
-        {initialSubmissions.length === 0 ? (
+        {submissions.length === 0 ? (
           <div className="border border-white/10 bg-zinc-950 px-6 py-16 text-center">
             <p className="text-white/40 text-base">
               No submissions yet. Share your site.
@@ -434,7 +539,7 @@ export default function DashboardLive({
           </div>
         ) : (
           <div className="border border-white/10">
-            <div className="hidden md:grid grid-cols-[140px_1fr_1fr_120px_120px_100px_100px] gap-4 px-5 py-3 border-b border-white/10 bg-zinc-950 text-xs tracking-widest font-mono text-white/40">
+            <div className="hidden md:grid grid-cols-[140px_1fr_1fr_120px_120px_100px_100px_40px] gap-4 px-5 py-3 border-b border-white/10 bg-zinc-950 text-xs tracking-widest font-mono text-white/40">
               <div>RECEIVED</div>
               <div>NAME</div>
               <div>BUSINESS</div>
@@ -442,20 +547,21 @@ export default function DashboardLive({
               <div>BUDGET</div>
               <div>INBOUND</div>
               <div>STATUS</div>
+              <div></div>
             </div>
             <ul>
-              {initialSubmissions.map((row) => {
+              {submissions.map((row) => {
                 const inboundCount = inboundCounts[row.id] ?? 0;
                 const unreadCount = unreadCounts[row.id] ?? 0;
                 const hasUnread = unreadCount > 0;
                 return (
                   <li
                     key={row.id}
-                    className="border-b border-white/5 last:border-b-0"
+                    className="border-b border-white/5 last:border-b-0 relative"
                   >
                     <Link
                       href={`/admin/submissions/${row.id}`}
-                      className="grid md:grid-cols-[140px_1fr_1fr_120px_120px_100px_100px] gap-2 md:gap-4 px-5 py-4 hover:bg-zinc-950 transition"
+                      className="grid md:grid-cols-[140px_1fr_1fr_120px_120px_100px_100px_40px] gap-2 md:gap-4 px-5 py-4 hover:bg-zinc-950 transition"
                     >
                       <div className="text-xs font-mono text-white/50 tracking-widest">
                         {formatDay(row.created_at).toUpperCase()}
@@ -487,7 +593,14 @@ export default function DashboardLive({
                       <div>
                         <StatusPill status={row.status} />
                       </div>
+                      <div />
                     </Link>
+                    <div className="absolute top-1/2 -translate-y-1/2 right-3 z-10">
+                      <SubmissionKebab
+                        submissionId={row.id}
+                        currentStatus={row.status}
+                      />
+                    </div>
                   </li>
                 );
               })}
